@@ -88,7 +88,6 @@ async def on_message(message):
             except: pass
     await bot.process_commands(message)
 
-if __name__ == "__main__":
-    keep_alive()
-    bot.run(os.getenv("DISCORD_TOKEN"))
+bot.run("MTQ3Mzc2MDQ5ODAwMzc0Mjg5Mw.Gj9Cfi.KqCBlaPpgQmnWhPRHOq0pnK9ZKZbQed5NTQjmM")
+
 
