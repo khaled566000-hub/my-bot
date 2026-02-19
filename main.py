@@ -6,7 +6,6 @@ import os
 from flask import Flask
 from threading import Thread
 
-# 1. السيرفر الوهمي
 app = Flask('')
 @app.route('/')
 def home(): return "I am alive!"
@@ -27,7 +26,6 @@ ai_status = True
 async def on_ready():
     print(f"| {bot.user.name} IS READY |")
 
-# 2. أمر التحكم
 @bot.group(invoke_without_command=True)
 async def sees(ctx, status: str):
     global ai_status
@@ -36,7 +34,6 @@ async def sees(ctx, status: str):
     if status.lower() == "on": ai_status = True
     elif status.lower() == "off": ai_status = False
 
-# 3. معالجة الرسائل والذكاء الاصطناعي (تعديل التعليمات لردود أفضل)
 @bot.event
 async def on_message(message):
     global ai_status
@@ -63,14 +60,13 @@ async def on_message(message):
         
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
-        
-        # تحسين التعليمات ليكون مساعداً متحدثاً وليس مجرد صدى
+ 
         payload = {
             "model": "llama-3.3-70b-versatile",
             "messages": [
                 {
                     "role": "system", 
-                    "content": "You are bot, an AI assistant designed to understand user requests and provide clear, helpful, and natural responses. You may see the user's name written in brackets like Name use it naturally when addressing the user if appropriate. Focus on being accurate, friendly, and relevant, and avoid repeating the user's input."
+                    "content": "You are a robot, an AI assistant designed to understand user requests and provide clear, helpful, and natural responses. You may see the username in parentheses; use it naturally when addressing the user if appropriate. Focus on accuracy, friendliness, and relevance"
                 },
                 *history_messages
             ]
@@ -88,5 +84,6 @@ async def on_message(message):
 if __name__ == "__main__":
     keep_alive()
     bot.run(os.getenv("DISCORD_TOKEN"))
+
 
 
