@@ -27,7 +27,7 @@ ai_status = True
 async def on_ready():
     print(f"| {bot.user.name} IS READY |")
 
-# 2. أمر التحكم فقط (بدون وظيفة المسح)
+# 2. أمر التحكم
 @bot.group(invoke_without_command=True)
 async def sees(ctx, status: str):
     global ai_status
@@ -36,7 +36,7 @@ async def sees(ctx, status: str):
     if status.lower() == "on": ai_status = True
     elif status.lower() == "off": ai_status = False
 
-# 3. معالجة الرسائل والذكاء الاصطناعي
+# 3. معالجة الرسائل والذكاء الاصطناعي (تعديل التعليمات لردود أفضل)
 @bot.event
 async def on_message(message):
     global ai_status
@@ -63,17 +63,25 @@ async def on_message(message):
         
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+        
+        # تحسين التعليمات ليكون مساعداً متحدثاً وليس مجرد صدى
         payload = {
             "model": "llama-3.3-70b-versatile",
             "messages": [
-                {"role": "system", "content": "Helpful AI. Detect user language and reply ONLY in that language. No translations."},
+                {
+                    "role": "system", 
+                    "content": "You are a helpful and conversational AI assistant. Respond naturally and provide informative answers. Detect the user's language and respond ONLY in that language (Arabic or English). Do not repeat the user's input; instead, engage in a real conversation."
+                },
                 *history_messages
             ]
         }
+        
         async with message.channel.typing():
             try:
                 r = requests.post(url, headers=headers, json=payload).json()
-                if 'choices' in r: await message.channel.send(r['choices'][0]['message']['content'][:2000])
+                if 'choices' in r: 
+                    response = r['choices'][0]['message']['content']
+                    await message.channel.send(response[:2000])
             except: pass
     await bot.process_commands(message)
 
