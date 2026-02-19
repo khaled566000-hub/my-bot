@@ -70,7 +70,7 @@ async def on_message(message):
             "messages": [
                 {
                     "role": "system", 
-                    "content": "You are a helpful and conversational AI assistant. Respond naturally and provide informative answers. Detect the user's language and respond ONLY in that language (Arabic or English). Do not repeat the user's input; instead, engage in a real conversation."
+                    "content": "You are bot, an AI assistant designed to understand user requests and provide clear, helpful, and natural responses. You may see the user's name written in brackets like [Name]; use it naturally when addressing the user if appropriate. Focus on being accurate, friendly, and relevant, and avoid repeating the user's input."
                 },
                 *history_messages
             ]
@@ -88,3 +88,4 @@ async def on_message(message):
 if __name__ == "__main__":
     keep_alive()
     bot.run(os.getenv("DISCORD_TOKEN"))
+
