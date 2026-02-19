@@ -6,7 +6,6 @@ import os
 from flask import Flask
 from threading import Thread
 
-# 1. تشغيل سيرفر وهمي للحفاظ على اتصال المنصة
 app = Flask('')
 @app.route('/')
 def home(): return "I am alive!"
@@ -15,12 +14,9 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
-# 2. إعدادات البوت والـ Intents
 intents = discord.Intents.default()
-try:
-    intents.message_content = True
-except:
-    intents.members = True
+try: intents.message_content = True
+except: intents.members = True
 
 bot = commands.Bot(command_prefix='.', intents=intents)
 GROQ_API_KEY = "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"
@@ -30,7 +26,6 @@ ai_status = True
 async def on_ready():
     print(f"| {bot.user.name} IS READY |")
 
-# 3. أوامر التحكم والمسح
 @bot.group(invoke_without_command=True)
 async def sees(ctx, status: str):
     global ai_status
@@ -53,7 +48,6 @@ async def _del(ctx, *, inp: str = "1"):
         check_func = (lambda m: m.author.id == bot.user.id) if only_bot else None
         await ctx.channel.purge(limit=amount, check=check_func)
 
-# 4. معالجة الرسائل والذكاء الاصطناعي
 @bot.event
 async def on_message(message):
     global ai_status
@@ -80,12 +74,21 @@ async def on_message(message):
         
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
-        payload = {"model": "llama-3.3-70b-versatile", "messages": [{"role": "system", "content": "Smart assistant. Arabic/English."}, *history_messages]}
+        # التعليمات الجديدة هنا: الرد بنفس لغة المستخدم فقط
+        payload = {
+            "model": "llama-3.3-70b-versatile",
+            "messages": [
+                {"role": "system", "content": "You are a helpful AI assistant. Detect the user's language and respond ONLY in that language. No translations."},
+                *history_messages
+            ]
+        }
         async with message.channel.typing():
             try:
                 r = requests.post(url, headers=headers, json=payload).json()
                 if 'choices' in r: await message.channel.send(r['choices'][0]['message']['content'][:2000])
             except: pass
     await bot.process_commands(message)
-    
-bot.run(os.getenv("DISCORD_TOKEN"))
+
+if __name__ == "__main__":
+    keep_alive()
+    bot.run(os.getenv("DISCORD_TOKEN"))
