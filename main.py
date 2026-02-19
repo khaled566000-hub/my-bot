@@ -6,7 +6,6 @@ import os
 from flask import Flask
 from threading import Thread
 
-# 1. نظام الـ Keep Alive
 app = Flask('')
 @app.route('/')
 def home(): return "I am alive!"
@@ -25,7 +24,10 @@ ai_status = True
 
 @bot.event
 async def on_ready():
-    print(f"| {bot.user.name} IS READY |")
+    print("                        ")
+    print("|======================|")
+    print("| * * * !BOT ON! * * * |")
+    print("|======================|")
 
 @bot.group(invoke_without_command=True)
 async def sees(ctx, status: str):
@@ -89,3 +91,4 @@ async def on_message(message):
 if __name__ == "__main__":
     keep_alive()
     bot.run(os.getenv("DISCORD_TOKEN"))
+
