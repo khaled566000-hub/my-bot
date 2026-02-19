@@ -65,7 +65,7 @@ async def on_message(message):
             except: pass
             
         history_messages = []
-        async for msg in message.channel.history(limit=10):
+        async for msg in message.channel.history(limit=100):
             role = "assistant" if msg.author.id == bot.user.id else "user"
             content = msg.content[1:] if msg.content.startswith(".") else msg.content
             user_name = msg.author.display_name.split('#')[0]
@@ -92,3 +92,4 @@ async def on_message(message):
 if __name__ == "__main__":
     keep_alive()
     bot.run(os.getenv("DISCORD_TOKEN"))
+
