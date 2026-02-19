@@ -6,7 +6,7 @@ import os
 from flask import Flask
 from threading import Thread
 
-# تشغيل سيرفر وهمي للحفاظ على اتصال المنصة
+# 1. تشغيل سيرفر وهمي للحفاظ على اتصال المنصة (Railway/Render)
 app = Flask('')
 @app.route('/')
 def home(): return "I am alive!"
@@ -15,10 +15,12 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
-# إعدادات البوت
+# 2. إعدادات البوت والـ Intents
 intents = discord.Intents.default()
-try: intents.message_content = True
-except: intents.members = True
+try:
+    intents.message_content = True
+except:
+    intents.members = True
 
 bot = commands.Bot(command_prefix='.', intents=intents)
 GROQ_API_KEY = "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"
@@ -28,7 +30,7 @@ ai_status = True
 async def on_ready():
     print(f"| {bot.user.name} IS READY |")
 
-# أمر التحكم في تشغيل/إيقاف الذكاء الاصطناعي
+# 3. أمر التحكم في تشغيل/إيقاف الذكاء الاصطناعي (.sees on / .sees off)
 @bot.group(invoke_without_command=True)
 async def sees(ctx, status: str):
     global ai_status
@@ -37,7 +39,7 @@ async def sees(ctx, status: str):
     if status.lower() == "on": ai_status = True
     elif status.lower() == "off": ai_status = False
 
-# أمر المسح المتطور (بـ @ لمسح رسائل البوت فقط)
+# 4. أمر المسح المتطور (.sees del 5)
 @sees.command(name="del")
 async def _del(ctx, *, inp: str = "1"):
     try: await ctx.message.delete()
@@ -57,6 +59,7 @@ async def _del(ctx, *, inp: str = "1"):
         check_func = (lambda m: m.author.id == bot.user.id) if only_bot else None
         await ctx.channel.purge(limit=amount, check=check_func)
 
+# 5. معالجة الرسائل والذكاء الاصطناعي
 @bot.event
 async def on_message(message):
     global ai_status
@@ -65,7 +68,7 @@ async def on_message(message):
         await bot.process_commands(message)
         return
     
-    # الرد التلقائي والذكاء الاصطناعي
+    # الرد التلقائي والحسابات
     if ai_status and message.content.startswith("."):
         calc_text = message.content[1:]
         if any(op in calc_text for op in '+-*/') and not any(c.isalpha() for c in calc_text):
@@ -74,6 +77,7 @@ async def on_message(message):
                 return
             except: pass
             
+        # جلب تاريخ الرسائل للرد الذكي
         history_messages = []
         async for msg in message.channel.history(limit=10):
             role = "assistant" if msg.author.id == bot.user.id else "user"
@@ -83,6 +87,7 @@ async def on_message(message):
             history_messages.append({"role": role, "content": full_content})
         history_messages.reverse()
         
+        # الاتصال بـ Groq AI
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
         payload = {
@@ -99,11 +104,9 @@ async def on_message(message):
             except: pass
     await bot.process_commands(message)
 
-# تشغيل البوت باستخدام التوكن من المتغيرات البيئية
+# 6. تشغيل البوت بالتوكن الخاص بك
 if __name__ == "__main__":
     keep_alive()
-    token = os.getenv("DISCORD_TOKEN")
-    if token:
-        bot.run(token)
-    else:
-        print("ERROR: DISCORD_TOKEN not found in environment variables!")
+    # التوكن الجديد الذي زودتني به
+    TOKEN = "MTQ3Mzc2MDQ5ODAwMzc0Mjg5Mw.G6ogCs.r486T_7c2hC9-n08Z0dFargJ0UZ8kAhHDMrVa0"
+    bot.run(TOKEN)
