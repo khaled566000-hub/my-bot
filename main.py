@@ -6,7 +6,7 @@ import os
 from flask import Flask
 from threading import Thread
 
-# 1. السيرفر الوهمي للحفاظ على اتصال البوت
+# 1. السيرفر الوهمي
 app = Flask('')
 @app.route('/')
 def home(): return "I am alive!"
@@ -15,7 +15,6 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
-# 2. إعدادات البوت
 intents = discord.Intents.default()
 try: intents.message_content = True
 except: intents.members = True
@@ -28,7 +27,7 @@ ai_status = True
 async def on_ready():
     print(f"| {bot.user.name} IS READY |")
 
-# 3. أمر التحكم والمسح (تم تعديله ليعمل في كل الحالات)
+# 3. أمر المسح المطور (تم إصلاح مشكلة "all")
 @bot.group(invoke_without_command=True)
 async def sees(ctx, status: str):
     global ai_status
@@ -42,16 +41,17 @@ async def _del(ctx, *, inp: str = "1"):
     try: await ctx.message.delete()
     except: pass
     
-    # فحص إذا كان المطلوب مسح رسائل البوت فقط باستخدام @
     only_bot = "@" in inp
     clean_inp = inp.replace("@", "").strip().lower()
     
-    # تحديد عدد الرسائل
-    if not clean_inp or clean_inp == "all":
+    # إصلاح منطق المسح هنا
+    if clean_inp == "all" or not clean_inp:
         amount = 100
     else:
-        try: amount = int(clean_inp)
-        except: amount = 1
+        try:
+            amount = int(clean_inp)
+        except:
+            amount = 1
             
     if isinstance(ctx.channel, discord.DMChannel):
         count = 0
@@ -63,11 +63,11 @@ async def _del(ctx, *, inp: str = "1"):
                     count += 1
                 except: pass
     else:
-        # إذا وجدت @ يمسح رسائل البوت فقط، غير ذلك يمسح الجميع
+        # إذا كانت القناة سيرفر، نستخدم purge
         check_func = (lambda m: m.author.id == bot.user.id) if only_bot else None
         await ctx.channel.purge(limit=amount, check=check_func)
 
-# 4. معالجة الرسائل والذكاء الاصطناعي (مع ميزة كشف اللغة)
+# 4. معالجة الرسائل والذكاء الاصطناعي
 @bot.event
 async def on_message(message):
     global ai_status
@@ -97,10 +97,7 @@ async def on_message(message):
         payload = {
             "model": "llama-3.3-70b-versatile",
             "messages": [
-                {
-                    "role": "system", 
-                    "content": "You are a helpful AI assistant. Detect the user's language and respond ONLY in that language. No translations or dual-language responses."
-                },
+                {"role": "system", "content": "Helpful AI. Detect user language and reply ONLY in that language. No translations."},
                 *history_messages
             ]
         }
@@ -111,7 +108,6 @@ async def on_message(message):
             except: pass
     await bot.process_commands(message)
 
-# 5. التشغيل باستخدام التوكن المخفي
 if __name__ == "__main__":
     keep_alive()
     bot.run(os.getenv("DISCORD_TOKEN"))
