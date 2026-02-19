@@ -104,9 +104,8 @@ async def on_message(message):
             except: pass
     await bot.process_commands(message)
 
-# 6. تشغيل البوت بالتوكن الخاص بك
+# 6. تشغيل البوت
 if __name__ == "__main__":
     keep_alive()
-    # التوكن الجديد الذي زودتني به
-    TOKEN = "MTQ3Mzc2MDQ5ODAwMzc0Mjg5Mw.G6ogCs.r486T_7c2hC9-n08Z0dFargJ0UZ8kAhHDMrVa0"
-    bot.run(TOKEN)
+    # هنا بنحط التوكن مباشرة بين الأقواس عشان يشتغل فوراً
+    bot.run("MTQ3Mzc2MDQ5ODAwMzc0Mjg5Mw.G6ogCs.r486T_7c2hC9-n08Z0dFargJ0UZ8kAhHDMrVa0")
