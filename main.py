@@ -6,7 +6,7 @@ import os
 from flask import Flask
 from threading import Thread
 
-# 1. تشغيل سيرفر وهمي للحفاظ على اتصال المنصة (Railway/Render)
+# 1. تشغيل سيرفر وهمي للحفاظ على اتصال المنصة
 app = Flask('')
 @app.route('/')
 def home(): return "I am alive!"
@@ -30,7 +30,7 @@ ai_status = True
 async def on_ready():
     print(f"| {bot.user.name} IS READY |")
 
-# 3. أمر التحكم في تشغيل/إيقاف الذكاء الاصطناعي (.sees on / .sees off)
+# 3. أوامر التحكم والمسح
 @bot.group(invoke_without_command=True)
 async def sees(ctx, status: str):
     global ai_status
@@ -39,27 +39,21 @@ async def sees(ctx, status: str):
     if status.lower() == "on": ai_status = True
     elif status.lower() == "off": ai_status = False
 
-# 4. أمر المسح المتطور (.sees del 5)
 @sees.command(name="del")
 async def _del(ctx, *, inp: str = "1"):
     try: await ctx.message.delete()
     except: pass
     only_bot = "@" in inp
     inp = inp.replace("@", "").strip()
-    if not inp or inp.lower() == "all": amount = 100
-    else:
-        try: amount = int(inp)
-        except: amount = 100
+    amount = 100 if (not inp or inp.lower() == "all") else int(inp)
     if isinstance(ctx.channel, discord.DMChannel):
         async for msg in ctx.channel.history(limit=amount):
-            if msg.author == bot.user:
-                try: await msg.delete()
-                except: pass
+            if msg.author == bot.user: await msg.delete()
     else:
         check_func = (lambda m: m.author.id == bot.user.id) if only_bot else None
         await ctx.channel.purge(limit=amount, check=check_func)
 
-# 5. معالجة الرسائل والذكاء الاصطناعي
+# 4. معالجة الرسائل والذكاء الاصطناعي
 @bot.event
 async def on_message(message):
     global ai_status
@@ -68,7 +62,6 @@ async def on_message(message):
         await bot.process_commands(message)
         return
     
-    # الرد التلقائي والحسابات
     if ai_status and message.content.startswith("."):
         calc_text = message.content[1:]
         if any(op in calc_text for op in '+-*/') and not any(c.isalpha() for c in calc_text):
@@ -77,26 +70,17 @@ async def on_message(message):
                 return
             except: pass
             
-        # جلب تاريخ الرسائل للرد الذكي
         history_messages = []
         async for msg in message.channel.history(limit=10):
             role = "assistant" if msg.author.id == bot.user.id else "user"
             content = msg.content[1:] if msg.content.startswith(".") else msg.content
             user_name = msg.author.display_name.split('#')[0]
-            full_content = f"[{user_name}]: {content}" if role == "user" else content
-            history_messages.append({"role": role, "content": full_content})
+            history_messages.append({"role": role, "content": f"[{user_name}]: {content}" if role == "user" else content})
         history_messages.reverse()
         
-        # الاتصال بـ Groq AI
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
-        payload = {
-            "model": "llama-3.3-70b-versatile",
-            "messages": [
-                {"role": "system", "content": "You are a smart assistant. Use names naturally. ONLY Arabic/English."},
-                *history_messages
-            ]
-        }
+        payload = {"model": "llama-3.3-70b-versatile", "messages": [{"role": "system", "content": "Smart assistant. Arabic/English."}, *history_messages]}
         async with message.channel.typing():
             try:
                 r = requests.post(url, headers=headers, json=payload).json()
@@ -104,8 +88,9 @@ async def on_message(message):
             except: pass
     await bot.process_commands(message)
 
-# 6. تشغيل البوت
+# 5. التشغيل الآمن (يسحب التوكن من Railway)
 if __name__ == "__main__":
     keep_alive()
-    # هنا بنحط التوكن مباشرة بين الأقواس عشان يشتغل فوراً
-    bot.run("MTQ3Mzc2MDQ5ODAwMzc0Mjg5Mw.G6ogCs.r486T_7c2hC9-n08Z0dFargJ0UZ8kAhHDMrVa0")
+    # لن نضع التوكن هنا أبداً لمنع حظره
+    token = os.getenv("DISCORD_TOKEN")
+    bot.run(token)
