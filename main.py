@@ -6,6 +6,7 @@ import os
 from flask import Flask
 from threading import Thread
 
+# 1. السيرفر الوهمي للحفاظ على اتصال البوت
 app = Flask('')
 @app.route('/')
 def home(): return "I am alive!"
@@ -14,6 +15,7 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
+# 2. إعدادات البوت
 intents = discord.Intents.default()
 try: intents.message_content = True
 except: intents.members = True
@@ -26,6 +28,7 @@ ai_status = True
 async def on_ready():
     print(f"| {bot.user.name} IS READY |")
 
+# 3. أمر التحكم والمسح (تم تعديله ليعمل في كل الحالات)
 @bot.group(invoke_without_command=True)
 async def sees(ctx, status: str):
     global ai_status
@@ -38,16 +41,33 @@ async def sees(ctx, status: str):
 async def _del(ctx, *, inp: str = "1"):
     try: await ctx.message.delete()
     except: pass
+    
+    # فحص إذا كان المطلوب مسح رسائل البوت فقط باستخدام @
     only_bot = "@" in inp
-    inp = inp.replace("@", "").strip()
-    amount = 100 if (not inp or inp.lower() == "all") else int(inp)
-    if isinstance(ctx.channel, discord.DMChannel):
-        async for msg in ctx.channel.history(limit=amount):
-            if msg.author == bot.user: await msg.delete()
+    clean_inp = inp.replace("@", "").strip().lower()
+    
+    # تحديد عدد الرسائل
+    if not clean_inp or clean_inp == "all":
+        amount = 100
     else:
+        try: amount = int(clean_inp)
+        except: amount = 1
+            
+    if isinstance(ctx.channel, discord.DMChannel):
+        count = 0
+        async for msg in ctx.channel.history(limit=100):
+            if count >= amount: break
+            if msg.author == bot.user:
+                try: 
+                    await msg.delete()
+                    count += 1
+                except: pass
+    else:
+        # إذا وجدت @ يمسح رسائل البوت فقط، غير ذلك يمسح الجميع
         check_func = (lambda m: m.author.id == bot.user.id) if only_bot else None
         await ctx.channel.purge(limit=amount, check=check_func)
 
+# 4. معالجة الرسائل والذكاء الاصطناعي (مع ميزة كشف اللغة)
 @bot.event
 async def on_message(message):
     global ai_status
@@ -65,7 +85,7 @@ async def on_message(message):
             except: pass
             
         history_messages = []
-        async for msg in message.channel.history(limit=100):
+        async for msg in message.channel.history(limit=20):
             role = "assistant" if msg.author.id == bot.user.id else "user"
             content = msg.content[1:] if msg.content.startswith(".") else msg.content
             user_name = msg.author.display_name.split('#')[0]
@@ -74,11 +94,13 @@ async def on_message(message):
         
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
-        # التعليمات الجديدة هنا: الرد بنفس لغة المستخدم فقط
         payload = {
             "model": "llama-3.3-70b-versatile",
             "messages": [
-                {"role": "system", "content": "You are a helpful AI assistant. Detect the user's language and respond ONLY in that language. No translations."},
+                {
+                    "role": "system", 
+                    "content": "You are a helpful AI assistant. Detect the user's language and respond ONLY in that language. No translations or dual-language responses."
+                },
                 *history_messages
             ]
         }
@@ -89,7 +111,7 @@ async def on_message(message):
             except: pass
     await bot.process_commands(message)
 
+# 5. التشغيل باستخدام التوكن المخفي
 if __name__ == "__main__":
     keep_alive()
     bot.run(os.getenv("DISCORD_TOKEN"))
-
