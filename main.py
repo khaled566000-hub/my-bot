@@ -87,10 +87,5 @@ async def on_message(message):
                 if 'choices' in r: await message.channel.send(r['choices'][0]['message']['content'][:2000])
             except: pass
     await bot.process_commands(message)
-
-# 5. التشغيل الآمن (يسحب التوكن من Railway)
-if __name__ == "__main__":
-    keep_alive()
-    # لن نضع التوكن هنا أبداً لمنع حظره
-    token = os.getenv("DISCORD_TOKEN")
-    bot.run(token)
+    
+bot.run(os.getenv("DISCORD_TOKEN"))
