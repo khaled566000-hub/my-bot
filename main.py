@@ -2,10 +2,11 @@ import discord
 from discord.ext import commands
 import requests
 import asyncio
+import os
 from flask import Flask
 from threading import Thread
 
-# تشغيل سيرفر وهمي عشان Render ما يقفلش البوت
+# تشغيل سيرفر وهمي للحفاظ على اتصال المنصة
 app = Flask('')
 @app.route('/')
 def home(): return "I am alive!"
@@ -14,6 +15,7 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
+# إعدادات البوت
 intents = discord.Intents.default()
 try: intents.message_content = True
 except: intents.members = True
@@ -26,6 +28,7 @@ ai_status = True
 async def on_ready():
     print(f"| {bot.user.name} IS READY |")
 
+# أمر التحكم في تشغيل/إيقاف الذكاء الاصطناعي
 @bot.group(invoke_without_command=True)
 async def sees(ctx, status: str):
     global ai_status
@@ -34,6 +37,7 @@ async def sees(ctx, status: str):
     if status.lower() == "on": ai_status = True
     elif status.lower() == "off": ai_status = False
 
+# أمر المسح المتطور (بـ @ لمسح رسائل البوت فقط)
 @sees.command(name="del")
 async def _del(ctx, *, inp: str = "1"):
     try: await ctx.message.delete()
@@ -60,6 +64,8 @@ async def on_message(message):
     if message.content.lower().startswith(".sees"):
         await bot.process_commands(message)
         return
+    
+    # الرد التلقائي والذكاء الاصطناعي
     if ai_status and message.content.startswith("."):
         calc_text = message.content[1:]
         if any(op in calc_text for op in '+-*/') and not any(c.isalpha() for c in calc_text):
@@ -67,6 +73,7 @@ async def on_message(message):
                 await message.channel.send(str(eval(calc_text)))
                 return
             except: pass
+            
         history_messages = []
         async for msg in message.channel.history(limit=10):
             role = "assistant" if msg.author.id == bot.user.id else "user"
@@ -75,12 +82,13 @@ async def on_message(message):
             full_content = f"[{user_name}]: {content}" if role == "user" else content
             history_messages.append({"role": role, "content": full_content})
         history_messages.reverse()
+        
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
         payload = {
             "model": "llama-3.3-70b-versatile",
             "messages": [
-                {"role": "system", "content": "You are a smart assistant. Use names naturally. ONLY Arabic/English. No Chinese."},
+                {"role": "system", "content": "You are a smart assistant. Use names naturally. ONLY Arabic/English."},
                 *history_messages
             ]
         }
@@ -91,5 +99,11 @@ async def on_message(message):
             except: pass
     await bot.process_commands(message)
 
-keep_alive()
-bot.run("MTQ3Mzc2MDQ5ODAwMzc0Mjg5Mw.GJYYd6.N3ESFlwWUk1rDzzpxMdcdTl-cdol-O1Eifgsms")
+# تشغيل البوت باستخدام التوكن من المتغيرات البيئية
+if __name__ == "__main__":
+    keep_alive()
+    token = os.getenv("DISCORD_TOKEN")
+    if token:
+        bot.run(token)
+    else:
+        print("ERROR: DISCORD_TOKEN not found in environment variables!")
