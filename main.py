@@ -27,7 +27,7 @@ ai_status = True
 async def on_ready():
     print(f"| {bot.user.name} IS READY |")
 
-# 3. أمر المسح المطور (تم إصلاح مشكلة "all")
+# 2. أمر التحكم فقط (بدون وظيفة المسح)
 @bot.group(invoke_without_command=True)
 async def sees(ctx, status: str):
     global ai_status
@@ -36,38 +36,7 @@ async def sees(ctx, status: str):
     if status.lower() == "on": ai_status = True
     elif status.lower() == "off": ai_status = False
 
-@sees.command(name="del")
-async def _del(ctx, *, inp: str = "1"):
-    try: await ctx.message.delete()
-    except: pass
-    
-    only_bot = "@" in inp
-    clean_inp = inp.replace("@", "").strip().lower()
-    
-    # إصلاح منطق المسح هنا
-    if clean_inp == "all" or not clean_inp:
-        amount = 100
-    else:
-        try:
-            amount = int(clean_inp)
-        except:
-            amount = 1
-            
-    if isinstance(ctx.channel, discord.DMChannel):
-        count = 0
-        async for msg in ctx.channel.history(limit=100):
-            if count >= amount: break
-            if msg.author == bot.user:
-                try: 
-                    await msg.delete()
-                    count += 1
-                except: pass
-    else:
-        # إذا كانت القناة سيرفر، نستخدم purge
-        check_func = (lambda m: m.author.id == bot.user.id) if only_bot else None
-        await ctx.channel.purge(limit=amount, check=check_func)
-
-# 4. معالجة الرسائل والذكاء الاصطناعي
+# 3. معالجة الرسائل والذكاء الاصطناعي
 @bot.event
 async def on_message(message):
     global ai_status
