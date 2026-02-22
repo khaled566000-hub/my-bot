@@ -3,14 +3,13 @@ from discord.ext import commands
 import aiohttp
 import asyncio
 import json
-import os  # أضفنا هذا المكتبة لقراءة المتغيرات
+import os
 
 intents = discord.Intents.default()
 intents.members = True 
 
 bot = commands.Bot(command_prefix='.', intents=intents)
 
-# قراءة المفاتيح من متغيرات النظام (Environment Variables)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -115,3 +114,4 @@ async def on_message(message):
     await bot.process_commands(message)
 
 bot.run(DISCORD_TOKEN)
+
